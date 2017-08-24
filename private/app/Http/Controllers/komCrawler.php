@@ -37,6 +37,8 @@ class komCrawler extends Controller
 	];
 	public $mainpage = [];
 	public $queue = [];
+	public $pageCounter = 0;
+	public $debuggingCLI = true;
 	public $fields = [
 	    "https://www.kiesopmaat.nl/api/dialogic/agreements/?format=json" => "agreements",
 	    "https://www.kiesopmaat.nl/api/dialogic/students/?format=json" => "students",
@@ -76,12 +78,28 @@ class komCrawler extends Controller
 	public function index() {
 		set_time_limit ( 0 );
 
+		$this->printerCLI("Turning off foreign keys.");
 		DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
+		$this->printerCLI("Getting main pages.");
 		$this->getMainPage();
+
+		$this->printerCLI("Getting sub pages.");
 		$this->getSubpages();
 
+		$this->printerCLI("Turning on foreign keys.");
 		DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+	}
+
+	public function clitest($bar, $users) {
+		echo "\r\nStarting crawling...";
+
+		$this->index();
+
+		//$users = [1, 2, 3, 4, 5];
+
+		return true;
+
 	}
 
 	public function makeUrl() {
@@ -124,15 +142,26 @@ class komCrawler extends Controller
 	//haalt eerst alles op van de mainpage
 	//daarna alles van subpages
 	public function getSubpages() {
+		$mainpageCounter = count($this->mainpage);
+		$this->printerCLI("mainpageCounter: ".$mainpageCounter);
 		while ($this->mainpage) {
 			$lastitem = array_pop($this->mainpage);
 			$this->getSubpage($lastitem);
 		}
 
+		$queueCounter = count($this->queue);
+		$this->printerCLI($queueCounter);
 		while ($this->queue) {
 			$lastitem = array_pop($this->queue);
+
+			$this->pageCounter ++;
+			if ($this->pageCounter % 10 == 0) {
+				$this->printerCLI("Getting data from: ".$lastitem.".");
+			}
 			$this->getSubpage($lastitem);
 		}
+
+		$this->printerCLI("I`ve gotten content from ".$this->pageCounter." pages!");
 	}
 
 	//zorgen dat we met de uri kunnen werken.
@@ -274,6 +303,12 @@ class komCrawler extends Controller
 			echo "</pre>";
 		} else {
 			echo $content;
+		}
+	}
+
+	function printerCLI($message, $custom = null) {
+		if ($this->debuggingCLI) {
+			echo "\r\n".$message;
 		}
 	}
 }

@@ -23,6 +23,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/commandTest', function() {
+	return "command test";
+});
+
 Route::get('/komgetdata', 'komCrawler@index'); 
 
 function printer($content, $title = null) {
